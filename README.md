@@ -25,3 +25,6 @@ Hardware-Agnostic Mobility: To maintain system functionality across various hard
 
 ---
 *Project SAGA is an ongoing open-source experiment in distributed AI and portable computing.*
+
+Note on Project Status:
+This project is currently under active development. Some modules may be incomplete, experimental, or subject to significant structural changes. Contributions and constructive feedback are welcome as I continue to refine the architecture.
