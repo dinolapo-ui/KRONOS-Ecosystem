@@ -3,7 +3,7 @@
 SAGA is an intelligent personal assistant system designed with a hybrid, distributed architecture. Inspired by the vision of a "Jarvis-like" assistant, SAGA aims to automate daily tasks and process data in a modular, highly scalable fashion.
 
 ## Core Technologies
-Languages: C++, Python
+Languages: C++, 
 Database System: MariaDB / MySQL
 Networking: Socket Programming, TCP/IP, Distributed Node Management
 
