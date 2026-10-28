@@ -1,0 +1,121 @@
+# KRONOS - docker compose up --build -d
+x-agent: &agent
+  restart: unless-stopped
+  environment:
+    OLLAMA_HOST: http://ollama:11434
+    OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+    MEMORY_URL: http://memory:8000
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  networks: [kronos_net]
+  depends_on:
+    ollama: { condition: service_healthy }
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health', timeout=3)"]
+    interval: 15s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes: [ollama_data:/root/.ollama]
+    networks: [kronos_net]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    # GPU (NVIDIA): uncomment
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{ driver: nvidia, count: all, capabilities: [gpu] }]
+
+  memory:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: docker/memory.Dockerfile
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes: [memory_data:/data]
+    networks: [kronos_net]
+    ports: ["127.0.0.1:8081:8000"]   # dev only: document ingestion
+    depends_on:
+      ollama: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  orchestrator:
+    <<: *agent
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args: { SERVICE_DIR: orchestrator }
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      MEMORY_URL: http://memory:8000
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      KRONOS_AGENTS_FILE: /srv/config/agents.yaml
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes: ["./config:/srv/config:ro"]
+    ports: ["127.0.0.1:8080:8000"]
+    depends_on:
+      ollama: { condition: service_healthy }
+      memory: { condition: service_healthy }
+      saga: { condition: service_healthy }
+      baruda: { condition: service_healthy }
+      lex: { condition: service_healthy }
+      nyx: { condition: service_healthy }
+      atlas: { condition: service_healthy }
+
+  saga:
+    <<: *agent
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args: { SERVICE_DIR: agents/saga }
+
+  baruda:
+    <<: *agent
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args: { SERVICE_DIR: agents/baruda }
+
+  lex:
+    <<: *agent
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args: { SERVICE_DIR: agents/lex }
+
+  nyx:
+    <<: *agent
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args: { SERVICE_DIR: agents/nyx }
+
+  atlas:
+    <<: *agent
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args: { SERVICE_DIR: agents/atlas }
+
+networks:
+  kronos_net:
+
+volumes:
+  ollama_data:
+  memory_data:

@@ -1,0 +1,6 @@
+agents:
+  saga:   { url: "http://saga:8000",   timeout: 330 }
+  baruda: { url: "http://baruda:8000", timeout: 330 }
+  lex:    { url: "http://lex:8000",    timeout: 330 }
+  nyx:    { url: "http://nyx:8000",    timeout: 330 }
+  atlas:  { url: "http://atlas:8000",  timeout: 330 }
